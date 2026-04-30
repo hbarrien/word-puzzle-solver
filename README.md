@@ -129,7 +129,7 @@ The solver has been successfully tested:
 - 1000x1000 with 80 words (only 6 words present in symbolTable): 0.418135 seconds
 - 1000x1000 with 80 words (all 80 words present in symbolTable): 0.276248 seconds
 - 1000x1000 with 600 words (all 600 words present in symbolTable): 1.35744 seconds
-- 5000x5000 with 2000 words (all 2000 words present in symbolTable): 123.273 seconds
+- 5000x5000 with 2000 words (all 2000 words present in symbolTable): 121.754 seconds
 
 The solver has also been successfully tested with words containing diacritic characters
 in Spanish, Portuguese, French, Italian, and German.
