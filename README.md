@@ -6,7 +6,7 @@ DATE:
 AUTHOR: 
 Herbert Barrientos (hpbarr@gmail.com)
 
-DESCRIPTION:
+DESCRIPTION:  
 The game
 ========
 This program (i.e., the "solver") solves the word puzzle game, a challenge 
