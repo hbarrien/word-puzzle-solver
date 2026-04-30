@@ -30,9 +30,9 @@ changes were introduced.
 
 Data structures
 ===============
-const SymbolTable symbolTable: the letter grid.
-const WordTable wordTable: the word list.
-const HashTable hashTable: contains positional references of all symbols.
+const SymbolTable symbolTable: the letter grid.  
+const WordTable wordTable: the word list.  
+const HashTable hashTable: contains positional references of all symbols.  
 
 Setup
 =====
