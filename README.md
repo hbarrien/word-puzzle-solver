@@ -125,7 +125,6 @@ Temporal Immutability
   the entire lifetime of the solver instance.  
   
 TESTING  
-abc
 ===
 The solver has been successfully tested:
 - 1000x1000 with 80 words (only 6 words present in symbolTable): 0.418135 seconds
