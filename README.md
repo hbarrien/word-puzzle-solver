@@ -6,7 +6,7 @@ DATE:
 AUTHOR: 
 Herbert Barrientos (hpbarr@gmail.com)
 
-DESCRIPTION:  
+DESCRIPTION  
 The game
 ========
 This program (i.e., the "solver") solves the word puzzle game, a challenge 
@@ -86,12 +86,12 @@ The output container.
 
 Postcondition
 =============
-For every word in wordTable:
-  - The word was included in a word record &&
-  - The word was duly processed (either found or not found in symbolTable) &&
-(|output container| == |wordTable|)
+For every word in wordTable:  
+  - The word was included in a word record &&  
+  - The word was duly processed (either found or not found in symbolTable) &&  
+(|output container| == |wordTable|)  
 
-CONSTRAINTS:
+CONSTRAINTS  
 1-based indexing
 ================
 - The initial implementation was developed in R, which uses 1-based vector and 
@@ -99,15 +99,15 @@ CONSTRAINTS:
   as they are, index conversion from 0-based to 1-based was necessary.
 - Given diacritic symbol display problems, this implementation is Windows-dependent.
 
-INVARIANTS:
+INVARIANTS  
 Structural Integrity
 ====================
-- Grid Consistency: 
-  - symbolTable is a non-empty matrix where (|rows| > 0) and |columns > 0|.
-  - symbolTable is rectangular: all rows have exactly the same number of columns.
-- Every entry in wordTable has a length >= 2.
-- hashTable contains a mapping for every coordinate in the symbolTable, indexed 
-  by the character at that position.
+- Grid Consistency:   
+  - symbolTable is a non-empty matrix where (|rows| > 0) and |columns > 0|.  
+  - symbolTable is rectangular: all rows have exactly the same number of columns.  
+- Every entry in wordTable has a length >= 2.  
+- hashTable contains a mapping for every coordinate in the symbolTable, indexed   
+  by the character at that position.  
 
 Ownership & Lifecycle
 =====================
@@ -124,7 +124,7 @@ Temporal Immutability
 - Stateless Execution: Immutability ensures both idempotency and thread-safety for 
   the entire lifetime of the solver instance.
 
-TESTING:
+TESTING  
 The solver has been successfully tested:
 - 1000x1000 with 80 words (only 6 words present in symbolTable): 0.418135 seconds
 - 1000x1000 with 80 words (all 80 words present in symbolTable): 0.276248 seconds
