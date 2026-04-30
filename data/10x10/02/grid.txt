@@ -1,0 +1,10 @@
+C,A,T,X,Q,P,L,M,N,O
+D,O,G,S,Z,V,K,J,B,H
+B,I,R,D,T,Y,U,I,O,P
+F,L,O,W,E,R,A,S,D,F
+S,N,A,K,E,G,H,J,K,L
+T,R,E,E,Q,W,E,R,T,Y
+C,O,M,P,U,T,E,R,Z,X
+C,H,A,I,R,V,B,N,M,L
+Q,W,E,R,T,Y,U,I,O,P
+Z,X,C,V,B,N,M,A,S,D

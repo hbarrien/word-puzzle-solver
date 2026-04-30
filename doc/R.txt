@@ -1,0 +1,354 @@
+Original R implementation
+=========================
+
+library(data.table)
+library(dplyr)
+
+
+SYMBOL_TABLE <- NULL
+HASH_TABLE <- NULL
+WORDS <- NULL
+
+N <- -1
+M <- -1
+
+POS_ULC <- 1
+POS_TOP <- 2
+POS_URC <- 3
+POS_RGT <- 4
+POS_LRC <- 5
+POS_BOT <- 6
+POS_LLC <- 7
+POS_LFT <- 8
+POS_INN <- 9
+
+DIR_NORTH <- 1
+DIR_NEAST <- 2
+DIR_EAST  <- 3
+DIR_SEAST <- 4
+DIR_SOUTH <- 5
+DIR_SWEST <- 6
+DIR_WEST  <- 7
+DIR_NWEST <- 8
+
+#            N  NE  E SE   S  SW   W  NW
+NEXT_i <- c(-1, -1, 0, 1,  1,  1,  0, -1)
+NEXT_j <- c( 0,  1, 1, 1,  0, -1, -1, -1)
+
+
+readSymbolFile <- function(fPath) {
+  
+  SYMBOL_TABLE <<- read.csv(fPath, header=FALSE)
+  M <<- ncol(SYMBOL_TABLE)
+  N <<- nrow(SYMBOL_TABLE)
+  
+}  # END readSymbolFile
+
+
+getKey <- function(symbol) {
+  
+  return(as.character(utf8ToInt(symbol)))
+  
+}  # END getKey
+
+
+getHashValues <- function(hashTable, symbol) {
+  
+  return(hashTable[[getKey(symbol)]])
+  
+}  # END getHashValues
+
+
+addHashValue <- function(hashTable, symbol, value) {
+  
+  key <- getKey(symbol)
+  hashTable[[key]][[length(hashTable[[key]]) + 1]] <- value
+  
+  return(hashTable)
+  
+}  # END addHashValue
+
+
+createHashTable <- function() {
+  
+  hashTable <- new.env(hash = TRUE, parent = emptyenv())
+  return(hashTable)
+  
+}  # END createHashTable
+
+
+initHashTable <- function(hashTable) {
+  
+  symbols <- c(as.character(0:9), LETTERS)
+  
+  for (symbol in symbols) {
+    
+    values <- list()
+    key <- getKey(symbol)
+    hashTable[[key]] <- values
+    
+  }  # END for
+  
+  return(hashTable)
+  
+}  # END initHashTable
+
+
+whichPosition <- function(i, j) {
+  
+  if (i == 1) {
+  
+    if (j == 1) return(POS_ULC)
+    if ((1 < j) && (j < M)) return(POS_TOP)
+    
+  }  # END if
+  
+  if (j == M) {
+    
+    if (i == 1) return(POS_URC)
+    if ((1 < i) && (i < N)) return(POS_RGT)
+    
+  }  # END if
+  
+  if (i == N) {
+    
+    if (j == M) return(POS_LRC)
+    if ((1 < j) && (j < M)) return(POS_BOT)
+    
+  }  # END if
+  
+  if (j == 1) {
+    
+    if (i == N) return(POS_LLC)
+    if ((1 < i) && (i < N)) return(POS_LFT)
+    
+  }  # END if
+  
+  return(POS_INN)
+  
+}  # END whichPosition
+
+
+getSearchDirections <- function(symbolPosition) {
+  
+  switch(symbolPosition,
+         POS_ULC = return(c(DIR_EAST, DIR_SEAST, DIR_SOUTH)),
+         POS_TOP = return(c(DIR_EAST, DIR_SEAST, DIR_SOUTH, DIR_SWEST, DIR_WEST)),
+         POS_URC = return(c(DIR_SOUTH, DIR_SWEST, DIR_WEST)),
+         POS_RGT = return(c(DIR_SOUTH, DIR_SWEST, DIR_WEST, DIR_NWEST, DIR_NORTH)),
+         POS_LRC = return(c(DIR_WEST, DIR_NWEST, DIR_NORTH)),
+         POS_BOT = return(c(DIR_EAST, DIR_WEST, DIR_NWEST, DIR_NORTH, DIR_NEAST)),
+         POS_LLC = return(c(DIR_EAST, DIR_NORTH, DIR_NEAST)),
+         POS_LFT = return(c(DIR_NORTH, DIR_NEAST, DIR_EAST, DIR_SEAST, DIR_SOUTH)),
+         POS_INN = return(c(DIR_NORTH, DIR_NEAST, DIR_EAST, DIR_SEAST, DIR_SOUTH, DIR_SWEST, DIR_WEST, DIR_NWEST))
+  )
+  
+  return(NULL)
+  
+}  # END getSearchDirections
+
+
+canSearchOrthogonally <- function(word, i, j, direction) {
+  
+  lw <- nchar(word)
+  
+  if (direction == DIR_NORTH) return(lw <= i)
+  if (direction == DIR_EAST)  return(lw <= ((M-j)+1))
+  if (direction == DIR_SOUTH) return(lw <= ((N-i)+1))
+  if (direction == DIR_WEST)  return(lw <= j)
+  
+  return(FALSE)
+  
+}  # END canSearchOrthogonally
+
+
+canSearchDiagonally <- function(word, i, j, direction) {
+  
+  h <- -1
+  b <- -1
+  
+  if (direction == DIR_NEAST) {
+    
+    h <- i
+    b <- ifelse(((j + h) <= M), h, ((M - j) + 1))
+    
+  }  # END if
+  
+  if (direction == DIR_SEAST) {
+    
+    db <- (N - i)
+    h  <- (db + 1)
+    b  <- ifelse(((j + db) <= M), h, ((M - j) + 1))
+    
+  }  # END if
+
+  if (direction == DIR_SWEST) {
+    
+    db <- (N - i)
+    h  <- (db + 1)
+    b  <- ifelse(((j - db) >=  1), h, j)
+    
+  }  # END if
+  
+  if (direction == DIR_NWEST) {
+    
+    h <- i
+    b <- ifelse(((j - h) >= 1), h, j)
+    
+  }  # END if
+  
+  if ((h < 0) || (b < 0))
+    return(FALSE)
+  
+  d  <- b
+  lw <- nchar(word)
+  
+  return(lw <= d)
+  
+}  # END canSearchDiagonally
+
+
+canSearch <- function(word, i, j, direction) {
+  
+  if (direction %in% c(DIR_NORTH, DIR_SOUTH, DIR_EAST, DIR_WEST))
+    return(canSearchOrthogonally(word, i, j, direction))
+  
+  if (direction %in% c(DIR_NEAST, DIR_SEAST, DIR_SWEST, DIR_NWEST))
+    return(canSearchDiagonally(word, i, j, direction))
+  
+  return(FALSE)
+  
+}  # END canSearch
+
+
+hashSymbols <- function(hashTable) {
+  
+  for (i in 1:N) {
+    
+    for (j in 1:M) {
+      
+      symbol <- SYMBOL_TABLE[i, j]
+      value  <- c(i=i, j=j, pos=whichPosition(i, j))
+      addHashValue(hashTable, symbol, value)
+      
+    }  # END for
+    
+  }  # END for
+  
+  return(hashTable)
+  
+}  # END hashSymbols
+
+
+setHashTable <- function() {
+
+  HASH_TABLE <<- createHashTable()
+  HASH_TABLE <<- initHashTable(HASH_TABLE)
+  HASH_TABLE <<- hashSymbols(HASH_TABLE)
+  
+}  # END setHashTable
+
+
+createWordsTable <- function(fPath) {
+  
+  WORDS <<- read.table(fPath, quote="\"", comment.char="", col.names = c("word"))
+  WORDS <<- WORDS %>% mutate(i=-1, j=-1, direction=-1)
+  
+}  # END createWordsTable
+
+
+getNexti <- function(i, direction) {
+  
+  return(i + NEXT_i[direction])
+}
+
+
+getNextj <- function(j, direction) {
+  
+  return(j + NEXT_j[direction])
+}
+
+
+matchWord <- function(word, i, j, direction) {
+  
+  lenWord <- nchar(word)
+  
+  if (SYMBOL_TABLE[i, j] != substr(word, 1, 1))
+    return(FALSE)
+  
+  if (lenWord == 1) 
+    return(TRUE)
+  
+  matchWord(substr(word, 2, lenWord), getNexti(i, direction), getNextj(j, direction), direction)
+  
+}  # END matchWord
+
+
+matchWords <- function() {
+  
+  lenWords <- nrow(WORDS)
+  
+  for (idx in 1:lenWords) {
+    
+    done <- FALSE
+    word <- WORDS[idx, "word"]
+    
+    hashValues <- getHashValues(HASH_TABLE, substr(word, 1,1))
+    
+    for (hashValue in hashValues) {
+      
+      i <- hashValue["i"]
+      names(i) <- NULL
+      
+      j <- hashValue["j"]
+      names(j) <- NULL
+      
+      pos <- hashValue["pos"]
+      names(pos) <- NULL
+      
+      directions <- getSearchDirections(pos)
+      
+      for (direction in directions) {
+        
+        if (!canSearch(word, i, j, direction))
+          next
+        
+        if (matchWord(word, i, j, direction)) {
+          
+          setWordSolution(word, i, j, direction)
+          done <- TRUE
+          break
+          
+        }  # END if
+        
+      }  # END for
+      
+      if (done) break
+      
+    }  # END for
+    
+  }  # END for
+  
+  return(WORDS)
+  
+}  # END matchWords
+
+
+setWordSolution <- function(word, i, j, direction) {
+  
+  WORDS[(WORDS$word == word), c("i", "j", "direction")] <<- c(i, j, direction)
+  
+}  # END setWordSolution
+
+
+searchWords <- function(sPath, wPath) {
+  
+
+  readSymbolFile(sPath)
+  createWordsTable(wPath)
+  setHashTable()
+  matchedWords <- matchWords()
+
+  return(matchedWords)
+
+}  # END searchWords

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CodeLite_Project Name="Word_Puzzle_Solver" Version="11000" InternalType="User templates">
+  <VirtualDirectory Name="data">
+    <VirtualDirectory Name="30x30">
+      <VirtualDirectory Name="30_words_with_diacritic_chars">
+        <File Name="data/30x30/30_words_with_diacritic_chars/words.txt"/>
+        <File Name="data/30x30/30_words_with_diacritic_chars/grid.txt"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <VirtualDirectory Name="5000x5000">
+      <VirtualDirectory Name="2000_words_in_grid">
+        <File Name="data/5000x5000/2000_words_in_grid/words.txt"/>
+        <File Name="data/5000x5000/2000_words_in_grid/grid.txt"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <VirtualDirectory Name="1000x1000">
+      <VirtualDirectory Name="600_words">
+        <File Name="data/1000x1000/600_words/words.txt"/>
+        <File Name="data/1000x1000/600_words/grid.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="80_words">
+        <VirtualDirectory Name="worst_case_most_words_not_in_grid">
+          <File Name="data/1000x1000/80_words/worst_case_most_words_not_in_grid/words.txt"/>
+          <File Name="data/1000x1000/80_words/worst_case_most_words_not_in_grid/grid.txt"/>
+        </VirtualDirectory>
+        <VirtualDirectory Name="best_case_all_words_in_grid">
+          <File Name="data/1000x1000/80_words/best_case_all_words_in_grid/words.txt"/>
+          <File Name="data/1000x1000/80_words/best_case_all_words_in_grid/grid.txt"/>
+        </VirtualDirectory>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <VirtualDirectory Name="100x100">
+      <File Name="data/100x100/words.txt"/>
+      <File Name="data/100x100/grid.txt"/>
+    </VirtualDirectory>
+    <VirtualDirectory Name="10x10">
+      <VirtualDirectory Name="02">
+        <File Name="data/10x10/02/words.txt"/>
+        <File Name="data/10x10/02/grid.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="01">
+        <File Name="data/10x10/01/words.txt"/>
+        <File Name="data/10x10/01/grid.txt"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+    <VirtualDirectory Name="8x8">
+      <VirtualDirectory Name="02">
+        <File Name="data/8x8/02/words.txt"/>
+        <File Name="data/8x8/02/grid.txt"/>
+      </VirtualDirectory>
+      <VirtualDirectory Name="01">
+        <File Name="data/8x8/01/words.txt"/>
+        <File Name="data/8x8/01/grid.txt"/>
+      </VirtualDirectory>
+    </VirtualDirectory>
+  </VirtualDirectory>
+  <VirtualDirectory Name="src">
+    <File Name="src/StringConverter.cpp"/>
+    <File Name="src/StringConverter.h"/>
+    <File Name="src/WordTable.h"/>
+    <File Name="src/WordTable.cpp"/>
+    <File Name="src/WordRecord.h"/>
+    <File Name="src/WordPuzzleSolver.h"/>
+    <File Name="src/WordPuzzleSolver.cpp"/>
+    <File Name="src/WordContainer.h"/>
+    <File Name="src/WordContainer.cpp"/>
+    <File Name="src/ThreadPool.h"/>
+    <File Name="src/ThreadPool.cpp"/>
+    <File Name="src/SymbolTable.h"/>
+    <File Name="src/SymbolTable.cpp"/>
+    <File Name="src/SymbolPosition.h"/>
+    <File Name="src/SymbolCoordinate.h"/>
+    <File Name="src/SearchDirection.h"/>
+    <File Name="src/main.cpp"/>
+    <File Name="src/HashTable.h"/>
+    <File Name="src/HashTable.cpp"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="versions">
+    <File Name="versions/04_threads_without_debug_comments.cpp_"/>
+    <File Name="versions/03_threads_with_debug_comments.cpp_"/>
+    <File Name="versions/02_threads.cpp_"/>
+    <File Name="versions/01_serial.cpp_"/>
+  </VirtualDirectory>
+  <VirtualDirectory Name="doc">
+    <File Name="doc/Outputs_current.txt"/>
+    <File Name="doc/Outputs_initial.txt"/>
+    <File Name="doc/R.txt"/>
+    <File Name="doc/Description.txt"/>
+  </VirtualDirectory>
+  <Description/>
+  <Dependencies/>
+  <Settings Type="Executable">
+    <GlobalSettings>
+      <Compiler Options="" C_Options="" Assembler="">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="">
+        <LibraryPath Value="."/>
+      </Linker>
+      <ResourceCompiler Options=""/>
+    </GlobalSettings>
+    <Configuration Name="Debug" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O0;-gdwarf-2;-std=c++17;-Wall" C_Options="-gdwarf-2;-O0;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="1">
+        <IncludePath Value="."/>
+      </Compiler>
+      <Linker Options="-static" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(ProjectName).exe" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(WorkspacePath)/build-$(WorkspaceConfiguration)/lib" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <BuildSystem Name="CodeLite Makefile Generator"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+    <Configuration Name="Release" CompilerType="MinGW" DebuggerType="GNU gdb debugger" Type="Executable" BuildCmpWithGlobalSettings="append" BuildLnkWithGlobalSettings="append" BuildResWithGlobalSettings="append">
+      <Compiler Options="-O2;-Wall" C_Options="-O2;-Wall" Assembler="" Required="yes" PreCompiledHeader="" PCHInCommandLine="no" PCHFlags="" PCHFlagsPolicy="1">
+        <IncludePath Value="."/>
+        <Preprocessor Value="NDEBUG"/>
+      </Compiler>
+      <Linker Options="" Required="yes"/>
+      <ResourceCompiler Options="" Required="no"/>
+      <General OutputFile="$(ProjectName).exe" IntermediateDirectory="" Command="$(WorkspacePath)/build-$(WorkspaceConfiguration)/bin/$(OutputFile)" CommandArguments="" UseSeparateDebugArgs="no" DebugArguments="" WorkingDirectory="$(WorkspacePath)/build-$(WorkspaceConfiguration)/lib" PauseExecWhenProcTerminates="yes" IsGUIProgram="no" IsEnabled="yes"/>
+      <BuildSystem Name="CodeLite Makefile Generator"/>
+      <Environment EnvVarSetName="&lt;Use Defaults&gt;" DbgSetName="&lt;Use Defaults&gt;">
+        <![CDATA[]]>
+      </Environment>
+      <Debugger IsRemote="no" RemoteHostName="" RemoteHostPort="" DebuggerPath="" IsExtended="no">
+        <DebuggerSearchPaths/>
+        <PostConnectCommands/>
+        <StartupCommands/>
+      </Debugger>
+      <PreBuild/>
+      <PostBuild/>
+      <CustomBuild Enabled="no">
+        <RebuildCommand/>
+        <CleanCommand/>
+        <BuildCommand/>
+        <PreprocessFileCommand/>
+        <SingleFileCommand/>
+        <MakefileGenerationCommand/>
+        <ThirdPartyToolName>None</ThirdPartyToolName>
+        <WorkingDirectory/>
+      </CustomBuild>
+      <AdditionalRules>
+        <CustomPostBuild/>
+        <CustomPreBuild/>
+      </AdditionalRules>
+      <Completion EnableCpp11="no" EnableCpp14="no">
+        <ClangCmpFlagsC/>
+        <ClangCmpFlags/>
+        <ClangPP/>
+        <SearchPaths/>
+      </Completion>
+    </Configuration>
+  </Settings>
+  <Dependencies Name="Debug"/>
+  <Dependencies Name="Release"/>
+</CodeLite_Project>

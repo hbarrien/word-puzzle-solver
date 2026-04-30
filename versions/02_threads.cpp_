@@ -1,0 +1,719 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <unordered_map>
+#include <chrono>
+#include <iomanip>
+
+// DELETE:
+// #include <thread>
+// #include <mutex>
+// #include <condition_variable>
+// #include <queue>
+// #include <functional>
+
+#include "ThreadPool.h"
+ 
+using namespace std;
+
+
+/* ***************************
+ * ** FORWARD DECLARATIONS ***
+ * ***************************
+ */
+class SymbolTable;
+class HashTable;
+class WordContainer;
+class WordRecord;
+enum class SearchDirection;
+ 
+ 
+/* ***************************
+ * ** FUNCTION PROTOTYPES ****
+ * ***************************
+ */
+SymbolTable readSymbolFile (const string &fPath, const char separator = ',');
+void hashSymbols(HashTable &hashTable, SymbolTable &symbolTable);
+HashTable setHashTable(SymbolTable &symbolTable);
+const vector<string> readWordsTable(const string &fPath);
+vector<WordRecord> searchWords(string sPath, string wPath);
+string directionToString(SearchDirection direction);
+void displayResults(vector<WordRecord> words);
+
+
+/* ***************************
+ * ******** CONSTANTS ********
+ * ***************************
+ */
+// Position of a symbol within SymbolTable
+enum class SymbolPosition {
+    POS_ULC,  // Upper-left corner
+    POS_TOP,  // Top row
+    POS_URC,  // Upper-right corner
+    POS_RGT,  // DELETE: XXXX
+    POS_LRC,  // Lower-right corner
+    POS_BOT,  // Bottom row
+    POS_LLC,  // Lower-left corner
+    POS_LFT,  // DELETE: XXXX
+    POS_INN   // Inner cell
+};
+
+// Word search direction within SymbolTable
+enum class SearchDirection {
+    DIR_NORTH,  // North
+    DIR_NEAST,  // North-East
+    DIR_EAST,   // EAST
+    DIR_SEAST,  // South-East
+    DIR_SOUTH,  // South
+    DIR_SWEST,  // South-West
+    DIR_WEST,   // West
+    DIR_NWEST,  // North-West
+    DIR_UNKNOWN // Unknown
+};
+
+
+/* ***************************
+ * ***** DATA STRUCTURES *****
+ * ***************************
+ */
+class SymbolTable {
+    
+private:
+    vector<char> data;
+    size_t N {0};  // Number of rows
+    size_t M {0};  // Number of columns
+    
+    // DELETE: Document!!!
+    size_t to1BasedIndex(int row, int col, int nCols) const {
+        return static_cast<size_t>((row - 1) * nCols + (col - 1));
+    }
+
+public:
+    SymbolTable()  = default;
+    ~SymbolTable() = default;
+    
+    void incrementNumRows() {
+        N++;
+    }
+    
+    void incrementNumColumns() {
+       M++; 
+    }
+    
+    size_t numRows() const {
+        return N;
+    }
+    
+    size_t numColumns() const {
+        return M;
+    }
+    
+    void add(const char &c) {
+        data.push_back(c);
+    }
+    
+    const char &at(const size_t i, const size_t j) const {
+        return data.at(to1BasedIndex(i, j, M));
+    }
+    
+    const size_t size() {
+        return data.size();
+    }
+        
+    const SymbolPosition whichPosition(const size_t i, const size_t j) const {
+        
+        if (i == 1) {
+            if (j == 1) return SymbolPosition::POS_ULC;
+            if ((1 < j) && (j < M)) return SymbolPosition::POS_TOP;
+        }
+        
+        if (j == M) {
+            
+            if (i == 1) return SymbolPosition::POS_URC;
+            if ((1 < i) && (i < N)) return SymbolPosition::POS_RGT;
+        }
+        
+        if (i == N) {
+            
+            if (j == M) return SymbolPosition::POS_LRC;
+            if ((1 < j) && (j < M)) return SymbolPosition::POS_BOT;
+        }
+        
+        if (j == 1) {
+            
+            if (i == N) return SymbolPosition::POS_LLC;
+            if ((1 < i) && (i < N)) return SymbolPosition::POS_LFT;
+        }
+        
+        return SymbolPosition::POS_INN;
+    }
+};
+
+// **** Hash Table Definitions ****
+struct SymbolCoordinate {
+    
+    int i;  // row number
+    int j;  // column number
+    SymbolPosition tablePosition; // symbol position within SymbolTable
+};
+
+typedef vector<SymbolCoordinate> SymbolCoordinates;
+
+class HashTable {
+    
+private:
+    unordered_map<char, SymbolCoordinates> hashTable;
+    
+public:
+    HashTable() = default;
+    ~HashTable() = default;
+    
+    void addHashValue(const char symbol, const SymbolCoordinate value) {
+        
+        hashTable[symbol].push_back(value); // DELETE: document!!
+    }  
+    
+    // DELETE: check & document when symbol does not exist
+    const SymbolCoordinates &getHashValues(const char symbol) const {
+        
+        return hashTable.at(symbol);
+    }
+    
+    // DELETE: JUST FOR TESTING !!!
+    auto gethashtable() {
+        return hashTable;
+    }
+};
+
+// **** Search-Word Definitions ****
+struct WordRecord {
+    string term {};
+    size_t i {0};
+    size_t j {0};
+    SearchDirection direction {SearchDirection::DIR_UNKNOWN};
+};
+
+class WordContainer {
+
+private:
+    vector<WordRecord> wordRecords;
+    
+public:
+    WordContainer() = default;
+    ~WordContainer() = default;
+    
+    void add(WordRecord word) {
+        wordRecords.push_back(word);
+    }
+    
+    vector<WordRecord> &getWordRecords() {
+        return wordRecords;
+    }
+};
+
+
+/* ***************************
+ * *** WORD PUZZLE SOLVER ****
+ * ***************************
+ */
+typedef vector<SearchDirection> SearchDirections;
+
+class WordPuzzleResolver {
+    
+private:
+    // DELETE: Document!!!
+    //                         N  NE  E SE   S  SW   W  NW
+    const vector<int> NEXT_i {-1, -1, 0, 1,  1,  1,  0, -1};
+    const vector<int> NEXT_j { 0,  1, 1, 1,  0, -1, -1, -1};
+
+    SearchDirections getSearchDirections(SymbolPosition symbolPosition) {
+        
+        switch(symbolPosition) {
+            
+            case SymbolPosition::POS_ULC:
+                return SearchDirections {SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_SEAST, 
+                                         SearchDirection::DIR_SOUTH};
+            
+            case SymbolPosition::POS_TOP:
+                return SearchDirections {SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_SEAST, 
+                                         SearchDirection::DIR_SOUTH, 
+                                         SearchDirection::DIR_SWEST, 
+                                         SearchDirection::DIR_WEST};
+            
+            case SymbolPosition::POS_URC:
+                return SearchDirections {SearchDirection::DIR_SOUTH, 
+                                         SearchDirection::DIR_SWEST, 
+                                         SearchDirection::DIR_WEST};
+            
+            case SymbolPosition::POS_RGT:
+                return SearchDirections {SearchDirection::DIR_SOUTH, 
+                                         SearchDirection::DIR_SWEST, 
+                                         SearchDirection::DIR_WEST, 
+                                         SearchDirection::DIR_NWEST, 
+                                         SearchDirection::DIR_NORTH};
+            
+            case SymbolPosition::POS_LRC:
+                return SearchDirections {SearchDirection::DIR_WEST, 
+                                         SearchDirection::DIR_NWEST, 
+                                         SearchDirection::DIR_NORTH};
+            
+            case SymbolPosition::POS_BOT:
+                return SearchDirections {SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_WEST, 
+                                         SearchDirection::DIR_NWEST, 
+                                         SearchDirection::DIR_NORTH, 
+                                         SearchDirection::DIR_NEAST};
+            
+            case SymbolPosition::POS_LLC:
+                return SearchDirections {SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_NORTH, 
+                                         SearchDirection::DIR_NEAST};
+            
+            case SymbolPosition::POS_LFT:
+                return SearchDirections {SearchDirection::DIR_NORTH, 
+                                         SearchDirection::DIR_NEAST, 
+                                         SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_SEAST, 
+                                         SearchDirection::DIR_SOUTH};
+            
+            case SymbolPosition::POS_INN:
+                return SearchDirections {SearchDirection::DIR_NORTH, 
+                                         SearchDirection::DIR_NEAST, 
+                                         SearchDirection::DIR_EAST, 
+                                         SearchDirection::DIR_SEAST, 
+                                         SearchDirection::DIR_SOUTH, 
+                                         SearchDirection::DIR_SWEST, 
+                                         SearchDirection::DIR_WEST, 
+                                         SearchDirection::DIR_NWEST};
+        }
+        
+        return SearchDirections{};
+    }
+    
+    bool canSearchOrthogonally(string word, size_t i, size_t j, 
+                               SearchDirection direction, 
+                               size_t M, size_t N) {
+        
+        size_t lw = word.length();
+  
+        if (direction == SearchDirection::DIR_NORTH) return (lw <= i);
+        if (direction == SearchDirection::DIR_EAST)  return (lw <= ((M-j)+1));
+        if (direction == SearchDirection::DIR_SOUTH) return (lw <= ((N-i)+1));
+        if (direction == SearchDirection::DIR_WEST)  return (lw <= j);
+        
+        return false;
+    }
+    
+    bool canSearchDiagonally(string word, size_t i, size_t j, 
+                             SearchDirection direction,
+                             size_t M, size_t N) {
+        int h {-1};
+        int b {-1};
+      
+        switch(direction) {
+            
+            case SearchDirection::DIR_NEAST:
+                {
+                    h = i;
+                    b = ((j + h) <= M) ? h : ((M - j) + 1);
+                }
+                break;
+            
+            case SearchDirection::DIR_SEAST:
+                {
+                    size_t db {(N - i)};
+                    h = (db + 1);
+                    b = ((j + db) <= M) ? h : ((M - j) + 1);
+                }
+                break;
+            
+            case SearchDirection::DIR_SWEST: 
+                {
+                    size_t db {(N - i)};
+                    h = (db + 1);
+                    b = ((j - db) >=  1) ? h : j;
+                }
+                break;
+            
+            case SearchDirection::DIR_NWEST: 
+                {
+                    h = i;
+                    b = ((j - h) >= 1) ? h : j;
+                }
+                break;
+            
+            case SearchDirection::DIR_NORTH:
+            case SearchDirection::DIR_SOUTH:
+            case SearchDirection::DIR_EAST:
+            case SearchDirection::DIR_WEST:
+            case SearchDirection::DIR_UNKNOWN:
+                return false;
+        }
+        
+        if ((h < 0) || (b < 0))
+            return false;
+        
+        int d = b;
+        int lw = word.length();
+        
+        return (lw <= d);
+    }
+    
+    bool canSearch(string word, size_t i, size_t j, 
+                   SearchDirection direction,
+                   size_t N, size_t M) {
+        
+        /* DELETE:
+         * if ((direction == SearchDirection::DIR_NORTH) ||
+            (direction == SearchDirection::DIR_SOUTH) ||
+            (direction == SearchDirection::DIR_EAST)  ||
+            (direction == SearchDirection::DIR_WEST))
+            return canSearchOrthogonally(word, i, j, direction, N, M)
+         *
+         * if (direction %in% c(DIR_NEAST, DIR_SEAST, DIR_SWEST, DIR_NWEST))
+         * return(canSearchDiagonally(word, i, j, direction)
+         */
+         
+         return (canSearchOrthogonally(word, i, j, direction, N, M) ||
+                 canSearchDiagonally(word, i, j, direction, N, M));
+    }
+    
+    size_t getNexti(size_t i, SearchDirection direction) {
+        return (i + NEXT_i.at(static_cast<int>(direction)));
+    }
+    
+    size_t getNextj(size_t j, SearchDirection direction) {
+        return (j + NEXT_j.at(static_cast<int>(direction)));
+    }
+    
+    bool matchWord(string word, size_t i, size_t j, 
+                   const SearchDirection direction, 
+                   const SymbolTable symbolTable) {
+        
+        /* ENABLE, DELETE:
+         * Recursion
+        int lenWord = word.length();
+  
+        if (symbolTable.at(i, j) != word.at(0))
+            return false;
+            
+        if (lenWord == 1) 
+            return true;
+            
+        return matchWord(word.substr(1, lenWord), 
+                         getNexti(i, direction), getNextj(j, direction), 
+                         direction, symbolTable);
+         */
+        
+        bool done {false};
+        while (!done) {
+            
+            int lenWord = word.length();
+            
+            if (symbolTable.at(i, j) != word.at(0))
+                return false;
+            
+            if (lenWord == 1) {
+                done = true;
+                continue;
+            }
+            
+            word = word.substr(1, lenWord);
+            i = getNexti(i, direction);
+            j = getNextj(j, direction);
+        }
+        
+        return true;
+    }
+    
+public:
+    WordPuzzleResolver() = default;
+    ~WordPuzzleResolver() = default;
+    
+    WordContainer matchWords(vector<string> &words, const HashTable &hashTable, const SymbolTable &symbolTable) {
+        
+        ThreadPool pool(std::thread::hardware_concurrency());
+        mutex results_mutex;
+        WordContainer result;
+        
+        // DELETE: auto &wordRecords {wordContainer.getWordRecords()};
+        
+        // DELETE:
+        // int count {0};
+        
+        // DELETE: for (auto &wordRecord : wordRecords) {
+        for (auto &word : words) {
+            
+            pool.enqueue([&, word] {
+                
+                bool done {false};
+                auto hashValues = hashTable.getHashValues(word.at(0));
+                
+                WordRecord wordRecord;
+                wordRecord.term = word;
+            
+                for (auto &hashValue : hashValues) {
+                    
+                    size_t i = hashValue.i;
+                    size_t j = hashValue.j;
+                
+                    SymbolPosition pos = hashValue.tablePosition;
+                    SearchDirections directions = getSearchDirections(pos);
+                
+                    for (auto direction : directions) {
+                        
+                        if (!canSearch(word, i, j, direction, 
+                             symbolTable.numRows(), symbolTable.numColumns()))
+                            continue;
+                        
+                        if (matchWord(word, i, j, direction, symbolTable)) {
+                        
+                            wordRecord.i = i;
+                            wordRecord.j = j;
+                            wordRecord.direction = direction;
+                            
+                            done = true;
+                            break;
+                        }
+                    }
+                
+                    if (done) break;
+                }
+                
+                std::lock_guard<std::mutex> lock(results_mutex);
+                result.add(std::move(wordRecord));
+            });
+            
+            /* DELETE ALL THIS:
+            bool done {false};
+            
+            // DELETE: auto hashValues = hashTable.getHashValues(wordRecord.term.at(0));
+            auto hashValues = hashTable.getHashValues(word.at(0));
+            
+            // DELETE:
+            // cout << wordRecord.term << endl;
+            
+            for (auto &hashValue : hashValues) {
+                
+                size_t i = hashValue.i;
+                size_t j = hashValue.j;
+                
+                SymbolPosition pos = hashValue.tablePosition;
+                SearchDirections directions = getSearchDirections(pos);
+                
+                for (auto direction : directions) {
+                    
+                    // DELETE: string word = wordRecord.term;
+                    
+                    if (!canSearch(word, i, j, direction, 
+                                   symbolTable.numRows(), symbolTable.numColumns()))
+                        continue;
+                    
+                    // DELETE:
+                    // count++;
+                    
+                    if (matchWord(word, i, j, direction, symbolTable)) {
+                        
+                        WordRecord wordRecord;
+                        wordRecord.term = word;
+                        wordRecord.i = i;
+                        wordRecord.j = j;
+                        wordRecord.direction = direction;
+                        
+                        done = true;
+                        break;
+                    }
+                }
+                
+                if (done) break;
+            }
+            */ 
+        }
+        
+        // DELETE:
+        // cout << " total searches: " << count << endl;
+        
+        return result;
+    }
+};
+
+
+/* ***************************
+ * ******* FUNCTIONS *********
+ * ***************************
+ */
+SymbolTable readSymbolFile (const string &fPath, const char separator) {
+    
+    SymbolTable symbolTable;
+    ifstream symbols {fPath, ios::in};
+    
+    if (!symbols.is_open())
+        throw invalid_argument("Symbol file not found: " + fPath);
+    
+    string line {};
+    while (getline(symbols, line)) {
+        
+        symbolTable.incrementNumRows();
+        
+        for (char &c : line) {
+            
+            if (c == separator) continue;
+            
+            symbolTable.add(c);
+            
+            if (symbolTable.numRows() == 1)
+                symbolTable.incrementNumColumns();
+        }
+    }
+    
+    return symbolTable;
+}
+
+void hashSymbols(HashTable &hashTable, SymbolTable &symbolTable) {
+    
+    for (size_t i {1}; i <= symbolTable.numRows(); i++) {
+        
+        for (size_t j {1}; j <= symbolTable.numColumns(); j++) {
+            
+            char symbol = symbolTable.at(i, j);
+            
+            SymbolCoordinate value;
+            value.i = i;
+            value.j = j;
+            value.tablePosition = symbolTable.whichPosition(i, j);
+            
+            hashTable.addHashValue(symbol, value);
+        }
+    }
+}
+
+HashTable setHashTable(SymbolTable &symbolTable) {
+    
+    HashTable hashTable;
+    hashSymbols(hashTable, symbolTable);
+    
+    return hashTable;
+}
+
+// DELETE: const WordContainer readWordsTable(const string &fPath) {
+const vector<string> readWordsTable(const string &fPath) {
+    
+    // DELETE: WordContainer words;
+    vector<string> words;
+    
+    ifstream wordsFile {fPath, ios::in};
+    
+    if (!wordsFile.is_open())
+        throw invalid_argument("Words file not found: " + fPath);
+    
+    string line {};
+    while (getline(wordsFile, line)) {
+        
+        // DELETE: 
+        // WordRecord word;
+        // word.term = line;
+        // words.add(word);
+        
+        words.push_back(line);
+    }
+    
+    return words;
+}
+ 
+vector<WordRecord> searchWords(string sPath, string wPath) {
+    
+    cout << "creating symbol table..." << endl;
+    SymbolTable symbolTable = readSymbolFile(sPath);
+    cout << "done..." << endl;
+    
+    cout << "creating words table..." << endl;
+    auto words = readWordsTable(wPath);
+    cout << "done..." << endl;
+    
+    cout << "creating hash table..." << endl;
+    HashTable hashTable = setHashTable(symbolTable);
+    cout << "done..." << endl;
+    
+    cout << "resolving word puzzle..." << endl;
+    WordPuzzleResolver resolver;
+    WordContainer result = resolver.matchWords(words, hashTable, symbolTable);
+    cout << "done..." << endl;
+    
+    return(result.getWordRecords());
+}
+
+string directionToString(SearchDirection direction) {
+    
+    switch(direction) {
+        case SearchDirection::DIR_NORTH:
+            return "NORTH";
+            
+        case SearchDirection::DIR_NEAST:
+            return "NORTH-EAST";
+            
+        case SearchDirection::DIR_EAST:
+            return "EAST";
+            
+        case SearchDirection::DIR_SEAST:
+            return "SOUTH-EAST";
+            
+        case SearchDirection::DIR_SOUTH:
+            return "SOUTH";
+            
+        case SearchDirection::DIR_SWEST:
+            return "SOUTH-WEST";
+            
+        case SearchDirection::DIR_WEST:
+            return "WEST";
+            
+        case SearchDirection::DIR_NWEST:
+            return "NORTH-WEST";
+            
+        case SearchDirection::DIR_UNKNOWN:
+            return "UNKNOWN";
+    }
+    
+    return "ERROR";
+}
+
+void displayResults(vector<WordRecord> words) {
+
+    cout << left << setw(15) << "Word"
+         << left << setw(4) << "i"
+         << left << setw(4) << "j"
+         << left << setw(10) << "Direction" << endl
+         << string(33, '=') << endl;
+    
+    for (auto wordRecord : words) {
+        
+        cout << left << setw(15) << wordRecord.term 
+             << left << setw(4)  << wordRecord.i 
+             << left << setw(4)  << wordRecord.j 
+             << left << setw(10) << directionToString(wordRecord.direction)
+             << endl;
+    }
+}
+
+
+/* ***************************
+ * ********* MAIN ************
+ * ***************************
+ */
+int main() {
+    
+    string sPath {"E:/_DE/2025-08-31 1640 General/Technical/Projects/R/wd/sopa/sopa.txt"};
+    string wPath = "E:/_DE/2025-08-31 1640 General/Technical/Projects/R/wd/sopa/words.txt";
+    
+    auto start = chrono::high_resolution_clock::now();
+    auto words = searchWords(sPath, wPath);
+    auto end = chrono::high_resolution_clock::now();
+    
+    std::chrono::duration<double> diff = end - start;
+    std::cout << "Duration. " << diff.count() << " seconds\n" << endl << endl;
+    
+    displayResults(words);
+    
+    return 0;
+}
