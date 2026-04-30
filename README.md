@@ -47,11 +47,11 @@ an internal table location.
 
 Precondition
 ============
-(|symbolTable| > 0) && 
-(symbolTable is rectangular)
-(symbolTable must be at least 3x3) &&
-(|words| > 0) &&
-(for every w in words: (w.length > 1))
+(|symbolTable| > 0) &&   
+(symbolTable is rectangular)  
+(symbolTable must be at least 3x3) &&  
+(|words| > 0) && 
+(for every w in words: (w.length > 1))  
 
 Search process
 ==============
