@@ -122,7 +122,7 @@ Temporal Immutability
   immutable state. All internal data structures are declared const and initialized 
   atomically during construction.
 - Stateless Execution: Immutability ensures both idempotency and thread-safety for 
-  the entire lifetime of the solver instance.
+  the entire lifetime of the solver instance.  
 
 TESTING  
 The solver has been successfully tested:
