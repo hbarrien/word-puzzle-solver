@@ -123,8 +123,7 @@ Temporal Immutability
   atomically during construction.
 - Stateless Execution: Immutability ensures both idempotency and thread-safety for 
   the entire lifetime of the solver instance.  
-
-
+  
 TESTING  
 The solver has been successfully tested:
 - 1000x1000 with 80 words (only 6 words present in symbolTable): 0.418135 seconds
